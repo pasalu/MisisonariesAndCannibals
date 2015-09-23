@@ -14,7 +14,7 @@ public class MissionariesAndCannibals {
             printUsageAndExit();
         }
 
-        Test.graph();
+        Test.actions();
     }
 
     private static int[] validateArguments(String[] args) {
@@ -71,5 +71,16 @@ public class MissionariesAndCannibals {
 
         System.out.println(MESSAGE);
         System.exit(ERROR_STATUS);
+    }
+
+    /**
+     * Solves the cannibals and missionaries problem.
+     * @param missionaries The number of missionaries.
+     * @param cannibals The number of cannibals.
+     * @param seats The number of seats on the boat.
+     * @param nodesToExpand Maximum number of nodes to expand.
+     */
+    private static void cannibalsAndMissionaries(int missionaries, int cannibals, int seats, int nodesToExpand) {
+        Node intialNode = new Node(null, "", missionaries, cannibals, "LEFT", seats);
     }
 }

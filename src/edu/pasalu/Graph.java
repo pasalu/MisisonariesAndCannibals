@@ -15,6 +15,11 @@ public class Graph<T> {
         graph = new Hashtable<>();
     }
 
+    /**
+     * Add node as adjacent to parent.
+     * @param parent The node to be adjacent to.
+     * @param node The node to be adjacent from.
+     */
     public void add(T parent, T node) {
         if (graph.get(parent) == null) {
             graph.put(parent, new LinkedList<>());
