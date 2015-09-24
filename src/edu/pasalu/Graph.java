@@ -16,16 +16,16 @@ public class Graph<T> {
     }
 
     /**
-     * Add node as adjacent to parent.
-     * @param parent The node to be adjacent to.
-     * @param node The node to be adjacent from.
+     * Add child as adjacent to parent.
+     * @param parent The child to be adjacent to.
+     * @param child The child to be adjacent from.
      */
-    public void add(T parent, T node) {
+    public void add(T parent, T child) {
         if (graph.get(parent) == null) {
             graph.put(parent, new LinkedList<>());
         }
 
-        graph.get(parent).add(node);
+        graph.get(parent).add(child);
     }
 
     @Override

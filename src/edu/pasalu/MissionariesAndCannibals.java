@@ -5,16 +5,26 @@
  */
 package edu.pasalu;
 
+import java.util.Vector;
+
 public class MissionariesAndCannibals {
+   static final int SEATS_INDEX = 0;
+   static final int MISSIONARIES_INDEX = 1;
+   static final int CANNIBALS_INDEX = 2;
+   static final int NODES_INDEX = 3;
 
     public static void main(String[] args) {
         try {
-            validateArguments(args);
+            int[] arguments = validateArguments(args);
+            cannibalsAndMissionaries(
+                    arguments[MISSIONARIES_INDEX],
+                    arguments[CANNIBALS_INDEX],
+                    arguments[SEATS_INDEX],
+                    arguments[NODES_INDEX]
+            );
         } catch (NumberFormatException e) {
             printUsageAndExit();
         }
-
-        Test.actions();
     }
 
     private static int[] validateArguments(String[] args) {
@@ -26,10 +36,6 @@ public class MissionariesAndCannibals {
         final int MAXIMUM_NUMBER_OF_ARGUMENTS = 4;
         final int MINIMUM_NUMBER_OF_NODES_TO_EXPAND = 0;
         final int UNLIMITED_NODES = -1;
-        final int SEATS_INDEX = 0;
-        final int MISSIONARIES_INDEX = 1;
-        final int CANNIBALS_INDEX = 2;
-        final int NODES_INDEX = 3;
 
         if (args.length < MINIMUM_NUMBER_OF_ARGUMENTS ||
                 args.length > MAXIMUM_NUMBER_OF_ARGUMENTS) {
@@ -81,6 +87,96 @@ public class MissionariesAndCannibals {
      * @param nodesToExpand Maximum number of nodes to expand.
      */
     private static void cannibalsAndMissionaries(int missionaries, int cannibals, int seats, int nodesToExpand) {
-        Node intialNode = new Node(null, "", missionaries, cannibals, "LEFT", seats);
+        final Node NO_PARENT = null;
+        final String NO_ACTION = "";
+        final int NO_MISSIONARIES = 0;
+        final int NO_CANNIBALS = 0;
+        final String BOAT_LEFT = "LEFT";
+        final String BOAT_RIGHT = "RIGHT";
+        final int MISSIONARIES_INDEX = 0;
+        final int CANNIBALS_INDEX = 1;
+
+        Graph<Node> graph = new Graph<>();
+        Node initialNode = new Node(
+                NO_PARENT,
+                NO_ACTION,
+                missionaries,
+                cannibals,
+                NO_MISSIONARIES,
+                NO_CANNIBALS,
+                BOAT_LEFT,
+                seats
+        );
+        Vector<String> actions = initialNode.state.actions();
+
+        for (String action : actions) {
+            int[] numberOfMsAndCs = numberOfMsAndCs(action);
+            int missionariesLeft = initialNode.state.missionariesLeft.length();
+            int cannibalsLeft = initialNode.state.cannibalsLeft.length();
+            int missionariesRight = initialNode.state.missionariesRight.length();
+            int cannibalsRight = initialNode.state.cannibalsRight.length();
+            final String newBoat;
+
+            if (initialNode.state.boat.equals(BOAT_LEFT)) {
+                newBoat = BOAT_RIGHT;
+                missionariesLeft -= numberOfMsAndCs[MISSIONARIES_INDEX];
+                cannibalsLeft -= numberOfMsAndCs[CANNIBALS_INDEX];
+                missionariesRight += numberOfMsAndCs[MISSIONARIES_INDEX];
+                cannibalsRight += numberOfMsAndCs[CANNIBALS_INDEX];
+            } else {
+                newBoat = BOAT_LEFT;
+                missionariesLeft += numberOfMsAndCs[MISSIONARIES_INDEX];
+                cannibalsLeft += numberOfMsAndCs[CANNIBALS_INDEX];
+                missionariesRight -= numberOfMsAndCs[MISSIONARIES_INDEX];
+                cannibalsRight -= numberOfMsAndCs[CANNIBALS_INDEX];
+            }
+
+            Node child = new Node(
+                    initialNode,
+                    action,
+                    missionariesLeft,
+                    cannibalsLeft,
+                    missionariesRight,
+                    cannibalsRight,
+                    newBoat,
+                    seats);
+
+            graph.add(initialNode, child);
+            System.out.println(child);
+            System.out.println(child.state.isSafeState());
+            System.out.println();
+        }
+        System.out.println(graph);
+    }
+
+    private static int[] numberOfMsAndCs(String s) {
+        final int LAST_M = s.lastIndexOf(Node.MISSIONARIES);
+        final int NOT_FOUND = -1;
+        final int NUMBER_OF_MS;
+        final int NUMBER_OF_CS;
+        final int NONE = 0;
+
+        //s consists of entirely of C's.
+        if (LAST_M == NOT_FOUND){
+            NUMBER_OF_MS = NONE;
+            NUMBER_OF_CS = s.length();
+        } else {
+            NUMBER_OF_MS = LAST_M + 1;
+            NUMBER_OF_CS = s.length() - NUMBER_OF_MS;
+        }
+
+        return new int[] {NUMBER_OF_MS, NUMBER_OF_CS};
+    }
+
+    /**
+     * Splits a string of 'M' and ending in 'C'.
+     * @param s A string consisting of only 'M' and 'C'.
+     * @return The string s split into 2 parts.
+     */
+    private static String[] splitMsAndCs(String s) {
+        final int STRING_BEGIN = 0;
+        final int LAST_M = s.lastIndexOf(Node.MISSIONARIES);
+
+        return new String[] {s.substring(STRING_BEGIN, LAST_M), s.substring(LAST_M)};
     }
 }

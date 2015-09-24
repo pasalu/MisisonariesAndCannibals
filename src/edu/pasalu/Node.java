@@ -11,6 +11,8 @@ public class Node {
     public final Node parent;
     public final String action;
     public final State state;
+    public static final String MISSIONARIES = "M";
+    public static final String CANNIBALS = "C";
 
     class State {
         public final String missionariesLeft;
@@ -20,16 +22,20 @@ public class Node {
         public final String missionariesRight;
         public final String cannibalsRight;
 
-        State(int missionaries, int cannibals, String boat, int seats) {
-            final String MISSIONARIES = "M";
-            final String CANNIBALS = "C";
-
-            this.missionariesLeft = repeat(MISSIONARIES, missionaries);
-            this.cannibalsLeft = repeat(CANNIBALS, cannibals);
+        State(
+                int missionariesLeft,
+                int cannibalsLeft,
+                int missionariesRight,
+                int cannibalsRight,
+                String boat,
+                int seats
+        ) {
+            this.missionariesLeft = repeat(MISSIONARIES, missionariesLeft);
+            this.cannibalsLeft = repeat(CANNIBALS, cannibalsLeft);
             this.boat = boat;
             this.seats = seats;
-            this.missionariesRight = "";
-            this.cannibalsRight = "";
+            this.missionariesRight = repeat(MISSIONARIES, missionariesRight);
+            this.cannibalsRight = repeat(CANNIBALS, cannibalsRight);
         }
 
         /**
@@ -102,6 +108,26 @@ public class Node {
             return actions;
         }
 
+        /**
+         * A state is considered safe is cannibals never outnumber missionaries.
+         * @return True if the state is safe, false otherwise.
+         */
+        public boolean isSafeState() {
+            final int NO_MISSIONARIES = 0;
+            boolean isLeftSafe = missionariesLeft.length() >= cannibalsLeft.length();
+            boolean isRightSafe = missionariesRight.length() >= cannibalsRight.length();
+
+            //It's fine for the cannibals to be alone.
+            if (!isLeftSafe && missionariesLeft.length() == NO_MISSIONARIES) {
+               isLeftSafe = !isLeftSafe;
+            }
+            if (!isRightSafe && missionariesRight.length() == NO_MISSIONARIES) {
+                isRightSafe = !isRightSafe;
+            }
+
+            return isLeftSafe && isRightSafe;
+        }
+
         @Override
         public String toString() {
             return missionariesLeft + cannibalsLeft + " " + boat + " " + missionariesRight + cannibalsRight;
@@ -112,18 +138,45 @@ public class Node {
      * Constructs a new Node.
      * @param parent The node that generated this one.
      * @param action The action taken to generate this node.
-     * @param missionaries The number of missionaries.
-     * @param cannibals The number of cannibals.
+     * @param missionariesLeft The number of missionaries on the left of the river.
+     * @param cannibalsLeft The number of cannibals on the left of the river.
+     * @param missionariesRight The number of missionaries on the right of the river.
+     * @param cannibalsRight The number of cannibals on the right of the river.
      * @param boat The location of the boat LEFT | RIGHT.
      */
-    public Node(Node parent, String action, int missionaries, int cannibals, String boat, int seats){
+    public Node(
+            Node parent,
+            String action,
+            int missionariesLeft,
+            int cannibalsLeft,
+            int missionariesRight,
+            int cannibalsRight,
+            String boat,
+            int seats)
+    {
+        final String LEFT = "<-";
+        final String RIGHT = "->";
+        final String BOAT_LEFT = "LEFT";
+        final Node NO_PARENT = null;
+        final String NO_ACTION = "";
         this.parent = parent;
-        this.action = action;
-        this.state = new State(missionaries, cannibals, boat, seats);
+
+        //The first node will have no parent and thus no action to get it here.
+        if (this.parent != NO_PARENT){
+            if (action.equals(BOAT_LEFT)) {
+                this.action =  action + LEFT;
+            } else {
+                this.action = action + RIGHT;
+            }
+        } else {
+            this.action = NO_ACTION;
+        }
+
+        this.state = new State(missionariesLeft, cannibalsLeft, missionariesRight, cannibalsRight, boat, seats);
     }
 
     @Override
     public String toString() {
-        return action + " " + state.toString();
+        return "{action: " + action + ", state: " + state.toString() + "}";
     }
 }
