@@ -5,6 +5,9 @@
  */
 package edu.pasalu;
 
+import java.util.ArrayDeque;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Vector;
 
 public class MissionariesAndCannibals {
@@ -96,8 +99,13 @@ public class MissionariesAndCannibals {
         final int MISSIONARIES_INDEX = 0;
         final int CANNIBALS_INDEX = 1;
 
+        boolean goalFound = false;
+        Node goalNode = null;
+        int numberOfNodesExpanded = 0;
+        LinkedList<Node> queue = new LinkedList<>();
+        HashSet<Node.State> seenStates = new HashSet<>();
         Graph<Node> graph = new Graph<>();
-        Node initialNode = new Node(
+        Node parent = new Node(
                 NO_PARENT,
                 NO_ACTION,
                 missionaries,
@@ -107,48 +115,86 @@ public class MissionariesAndCannibals {
                 BOAT_LEFT,
                 seats
         );
-        Vector<String> actions = initialNode.state.actions();
+        queue.offer(parent);
+        seenStates.add(parent.state);
 
-        for (String action : actions) {
-            int[] numberOfMsAndCs = numberOfMsAndCs(action);
-            int missionariesLeft = initialNode.state.missionariesLeft.length();
-            int cannibalsLeft = initialNode.state.cannibalsLeft.length();
-            int missionariesRight = initialNode.state.missionariesRight.length();
-            int cannibalsRight = initialNode.state.cannibalsRight.length();
-            final String newBoat;
+        search:
+        while (!queue.isEmpty()) {
+            parent = queue.remove();
+            Vector<String> actions = parent.state.actions();
 
-            if (initialNode.state.boat.equals(BOAT_LEFT)) {
-                newBoat = BOAT_RIGHT;
-                missionariesLeft -= numberOfMsAndCs[MISSIONARIES_INDEX];
-                cannibalsLeft -= numberOfMsAndCs[CANNIBALS_INDEX];
-                missionariesRight += numberOfMsAndCs[MISSIONARIES_INDEX];
-                cannibalsRight += numberOfMsAndCs[CANNIBALS_INDEX];
-            } else {
-                newBoat = BOAT_LEFT;
-                missionariesLeft += numberOfMsAndCs[MISSIONARIES_INDEX];
-                cannibalsLeft += numberOfMsAndCs[CANNIBALS_INDEX];
-                missionariesRight -= numberOfMsAndCs[MISSIONARIES_INDEX];
-                cannibalsRight -= numberOfMsAndCs[CANNIBALS_INDEX];
+            for (String action : actions) {
+                int[] numberOfMsAndCs = numberOfMsAndCs(action);
+                int missionariesLeft = parent.state.missionariesLeft.length();
+                int cannibalsLeft = parent.state.cannibalsLeft.length();
+                int missionariesRight = parent.state.missionariesRight.length();
+                int cannibalsRight = parent.state.cannibalsRight.length();
+                final String newBoat;
+
+                if (parent.state.boat.equals(BOAT_LEFT)) {
+                    newBoat = BOAT_RIGHT;
+                    missionariesLeft -= numberOfMsAndCs[MISSIONARIES_INDEX];
+                    cannibalsLeft -= numberOfMsAndCs[CANNIBALS_INDEX];
+                    missionariesRight += numberOfMsAndCs[MISSIONARIES_INDEX];
+                    cannibalsRight += numberOfMsAndCs[CANNIBALS_INDEX];
+                } else {
+                    newBoat = BOAT_LEFT;
+                    missionariesLeft += numberOfMsAndCs[MISSIONARIES_INDEX];
+                    cannibalsLeft += numberOfMsAndCs[CANNIBALS_INDEX];
+                    missionariesRight -= numberOfMsAndCs[MISSIONARIES_INDEX];
+                    cannibalsRight -= numberOfMsAndCs[CANNIBALS_INDEX];
+                }
+
+                Node child = new Node(
+                        parent,
+                        action,
+                        missionariesLeft,
+                        cannibalsLeft,
+                        missionariesRight,
+                        cannibalsRight,
+                        newBoat,
+                        seats
+                );
+
+                graph.add(parent, child);
+                numberOfNodesExpanded++;
+
+                if (numberOfNodesExpanded == nodesToExpand) {
+                    break search;
+                }
+
+                //Only safe states that haven't been seen before should be explored.
+                if (child.state.isSafe() && !seenStates.contains(child.state)) {
+                    queue.offer(child);
+                }
+                seenStates.add(child.state);
+
+                if (child.state.isGoal()) {
+                    goalFound = true;
+                    goalNode = child;
+                    break search;
+                }
             }
-
-            Node child = new Node(
-                    initialNode,
-                    action,
-                    missionariesLeft,
-                    cannibalsLeft,
-                    missionariesRight,
-                    cannibalsRight,
-                    newBoat,
-                    seats);
-
-            graph.add(initialNode, child);
-            System.out.println(child);
-            System.out.println(child.state.isSafeState());
-            System.out.println();
         }
-        System.out.println(graph);
+
+        System.out.println(numberOfNodesExpanded + " node(s) expanded.");
+
+        if (goalFound) {
+            printMoves(goalNode);
+        } else {
+            if (numberOfNodesExpanded == nodesToExpand) {
+                System.out.println("Search exceeded limit entered by user.");
+            } else {
+                System.out.println("No solution was found.");
+            }
+        }
     }
 
+    /**
+     * Counts the number of M's and C's in a string.
+     * @param s A string consisting entirely of M's and C's.
+     * @return The number of M's in the first index, and the number of C's in the second index.
+     */
     private static int[] numberOfMsAndCs(String s) {
         final int LAST_M = s.lastIndexOf(Node.MISSIONARIES);
         final int NOT_FOUND = -1;
@@ -168,15 +214,22 @@ public class MissionariesAndCannibals {
         return new int[] {NUMBER_OF_MS, NUMBER_OF_CS};
     }
 
-    /**
-     * Splits a string of 'M' and ending in 'C'.
-     * @param s A string consisting of only 'M' and 'C'.
-     * @return The string s split into 2 parts.
-     */
-    private static String[] splitMsAndCs(String s) {
-        final int STRING_BEGIN = 0;
-        final int LAST_M = s.lastIndexOf(Node.MISSIONARIES);
+    private static void printMoves(Node node) {
+        Node n = node;
+        final Node NO_PARENT = null;
+        ArrayDeque<String> stack = new ArrayDeque<>();
+        LinkedList<String> list = new LinkedList<>();
 
-        return new String[] {s.substring(STRING_BEGIN, LAST_M), s.substring(LAST_M)};
+        while (n != NO_PARENT) {
+            if (!n.action.isEmpty()) {
+                stack.push(n.action);
+            }
+
+            n = n.parent;
+        }
+
+        stack.forEach(list::push);
+        System.out.println(list.size() + " trip(s) required.");
+        System.out.println(list);
     }
 }

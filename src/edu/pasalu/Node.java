@@ -112,7 +112,8 @@ public class Node {
          * A state is considered safe is cannibals never outnumber missionaries.
          * @return True if the state is safe, false otherwise.
          */
-        public boolean isSafeState() {
+        @SuppressWarnings("ConstantConditions")
+        public boolean isSafe() {
             final int NO_MISSIONARIES = 0;
             boolean isLeftSafe = missionariesLeft.length() >= cannibalsLeft.length();
             boolean isRightSafe = missionariesRight.length() >= cannibalsRight.length();
@@ -126,6 +127,25 @@ public class Node {
             }
 
             return isLeftSafe && isRightSafe;
+        }
+
+        public boolean isGoal() {
+            return missionariesLeft.isEmpty() && cannibalsLeft.isEmpty() && boat.equals("RIGHT");
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            //noinspection SimplifiableIfStatement
+            if (other instanceof State) {
+                return this.toString().equals(other.toString());
+            }
+
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return this.toString().hashCode();
         }
 
         @Override
@@ -152,7 +172,8 @@ public class Node {
             int missionariesRight,
             int cannibalsRight,
             String boat,
-            int seats)
+            int seats
+    )
     {
         final String LEFT = "<-";
         final String RIGHT = "->";
@@ -163,7 +184,7 @@ public class Node {
 
         //The first node will have no parent and thus no action to get it here.
         if (this.parent != NO_PARENT){
-            if (action.equals(BOAT_LEFT)) {
+            if (boat.equals(BOAT_LEFT)) {
                 this.action =  action + LEFT;
             } else {
                 this.action = action + RIGHT;
